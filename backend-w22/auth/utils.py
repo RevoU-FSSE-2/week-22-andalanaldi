@@ -18,7 +18,7 @@ def decode_jwt(token):
         print("Invalid token error")
         return None
 
-def role_required(roles):
+def role_required(list_roles):
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
@@ -29,10 +29,10 @@ def role_required(roles):
             try:
                 decoded_token = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms="HS256")
                 user_role = decoded_token.get("role")
-                if user_role in roles: # change '== UserRole.BROKER.value:' into in list_roles
+                if user_role in list_roles: # change '== UserRole.BROKER.value:' into in list_roles
                     return fn(*args, **kwargs)
                 else:
-                    return {"error": f"{roles[0].capitalize()} access is required"}, 403
+                    return {"error": f"{list_roles[0].capitalize()} access is required"}, 403
             except jwt.ExpiredSignatureError:
                 return {"error": "Token has expired"}, 401
             except jwt.InvalidTokenError:
