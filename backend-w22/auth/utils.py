@@ -1,7 +1,6 @@
 from functools import wraps
 import jwt, os
-from flask import request
-# , g
+from flask import request # , g
 from user.constants import ListRole
 
 def decode_jwt(token):
