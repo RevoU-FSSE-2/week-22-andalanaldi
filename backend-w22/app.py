@@ -6,8 +6,8 @@ from common.bcrypt import bcrypt
 from db import db, db_init
 
 
-from auth.auth_service import auth_service
-from ipotodow.ipo_service import ipo_service
+from auth.apis import auth_service
+from ipotodow.apis import ipo_service
 
 app = Flask(__name__)
 CORS(app)
