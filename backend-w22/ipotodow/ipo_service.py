@@ -130,16 +130,57 @@ def update_ipo_to_do(ipo_id):
 @client_required(["client"])
 def delete_ipo_to_do(ipo_id):
     try:
-        deleted_ipo = IPO.query.filter_by(id=ipo_id).delete()
-        db.session.commit()
+        ipo = IPO.query.filter_by(id=ipo_id).first()
 
-        if deleted_ipo == 0:
+        if ipo:
+            # Check user's role and ID before deletion
+            # if ipo.user_id != current_user.user_id:
+            #     return {'error': 'Forbidden Access'}, 403
+
+            db.session.delete(ipo)
+            db.session.commit()
+
+            return {'message': 'To Do List of IPO Order Preparations deleted successfully'}, 200
+        else:
             return {'error': 'To Do List of IPO Order Preparations not found'}, 404
 
-        return {'message': 'To Do List of IPO Order Preparations deleted successfully'}, 200
+    # try:
+    #     deleted_ipo = IPO.query.filter_by(id=ipo_id).delete()
+    #     db.session.commit()
 
+    #     if deleted_ipo == 0:
+    #         return {'error': 'To Do List of IPO Order Preparations not found'}, 404
+
+    #     return {'message': 'To Do List of IPO Order Preparations deleted successfully'}, 200
     except Exception as e:
         return {'error': str(e)}, 500
+
+# additional notes for checking current user login
+# pip install flask-login
+# from flask import Flask
+# from flask_login import LoginManager
+
+# app = Flask(__name__)
+# login_manager = LoginManager(app)
+
+# @login_manager.user_loader
+# def load_user(user_id):
+#     # Implement a function to load the user from your database based on user_id
+#     # Example: return User.query.get(int(user_id))
+#     pass
+
+# from flask_login import login_user, current_user
+
+# # Example login route
+# @app.route('/login', methods=['POST'])
+# def login():
+#     # Authenticate the user and retrieve the user object
+#     # Example: user = User.query.filter_by(username=form.username.data).first()
+
+#     # Once authenticated, log in the user
+#     # Example: login_user(user)
+#     pass
+
 
 # Approval IPO
 @ipo_service.route('/approval/<int:ipo_id>', methods=['PUT'])
