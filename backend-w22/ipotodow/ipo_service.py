@@ -17,6 +17,7 @@ class IPOSchema(Schema):
     priority = fields.Integer(required=True)
     deadline = fields.DateTime(required=True)
 
+
 # Get all IPOs
 @ipo_service.route('/', methods=['GET'])
 @role_required([ListRole.CLIENT.value, ListRole.BROKER.value])
@@ -55,8 +56,19 @@ def get_all_ipo_to_do():
 def create_ipo_to_do():
     try:
         data = request.json
-        ipo = IPOSchema().load(data)
-        new_ipo = IPO(**ipo)
+        # ipo = IPOSchema().load(data)
+        ipo_schema = IPOSchema()
+
+        # Validate and deserialize data
+        errors = ipo_schema.validate(data)
+        if errors:
+            return {'error': errors}, 400
+
+        # Remove validation fields before creating the IPO object
+        validated_data = ipo_schema.load(data)
+        
+        new_ipo = IPO(**validated_data)
+        # **ipo
         db.session.add(new_ipo)
         db.session.commit()
 
