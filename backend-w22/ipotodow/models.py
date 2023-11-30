@@ -7,7 +7,7 @@ class IPO(db.Model):
     tickercode = db.Column(db.String(50), nullable=False)
     purpose = db.Column(db.String(255), nullable=False)
     outstanding = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='pending')  # Set default status as 'pending'
     priority = db.Column(db.Integer, nullable=False)
     deadline = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
