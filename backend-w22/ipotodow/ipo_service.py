@@ -24,6 +24,10 @@ class IPOUpdateSchema(Schema):
     outstanding = fields.Float(required=False)
     priority = fields.Integer(required=False)
 
+# Marshmallow schema for request validation - for PUT method by Broker
+class IPOBrokerUpdateSchema(Schema):
+    status = fields.String(required=True, validate=validate.OneOf(['approved', 'rejected']))
+
 
 # Get all IPOs
 @ipo_service.route('/', methods=['GET'])
@@ -188,15 +192,24 @@ def delete_ipo_to_do(ipo_id):
 def approval_ipo(ipo_id): # add (user_id, user_role) from auth utils.py
     try:
         data = request.json
-        ipo = IPOSchema(only=['status']).load(data)
+        ipo = IPOBrokerUpdateSchema().load(data)
+        # (only=['status'])
+        ipo_record = IPO.query.filter_by(id=ipo_id).first()
 
-        updated_ipo = IPO.query.filter_by(id=ipo_id).update(ipo)
-        db.session.commit()
+        if ipo_record:
+            ipo_record.status = ipo.get('status')
+            db.session.commit()
 
-        if updated_ipo == 0:
+            return {'message': 'To Do List of IPO Order Preparations status successfully updated'}, 200
+        else:
             return {'error': 'To Do List of IPO Order Preparations not found'}, 404
+        # updated_ipo = IPO.query.filter_by(id=ipo_id).update(ipo)
+        # db.session.commit()
 
-        return {'message': 'To Do List of IPO Order Preparations status successfully updated'}, 200
+        # if updated_ipo == 0:
+        #     return {'error': 'To Do List of IPO Order Preparations not found'}, 404
+
+        # return {'message': 'To Do List of IPO Order Preparations status successfully updated'}, 200
 
     except ValidationError as e:
         return {'error': e.messages}, 400
