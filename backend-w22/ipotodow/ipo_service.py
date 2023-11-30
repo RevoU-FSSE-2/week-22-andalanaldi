@@ -32,7 +32,7 @@ class IPOBrokerUpdateSchema(Schema):
 # Get all IPOs
 @ipo_service.route('/', methods=['GET'])
 @role_required([ListRole.CLIENT.value, ListRole.BROKER.value])
-@client_required(["client","broker"])
+# @client_required(["client","broker"])
 def get_all_ipo_to_do():
     role = request.args.get('role')
     user_id = request.args.get('id')
