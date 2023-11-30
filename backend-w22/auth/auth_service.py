@@ -5,15 +5,22 @@ from user.models import User
 from db import db
 import jwt, os
 from datetime import datetime, timedelta
-from marshmallow import Schema, fields, ValidationError
+from marshmallow import Schema, fields, ValidationError, validate
+import re
 
 auth_service = Blueprint("auth", __name__)
+
+# Custom validator function for password
+def validate_password(password):
+    if not re.match(r'^(?=.*\d)(?=.*[a-zA-Z]).{8,100}$', password):
+        raise ValidationError('Password must be between 8 and 100 characters and contain both letters and numbers')
 
 # Marshmallow schema for request validation
 class UserRegistrationSchema(Schema):
     username = fields.Str(required=True)
-    password = fields.Str(required=True)
-    role = fields.Str(required=True)
+    password = fields.Str(required=True, validate=validate_password)
+    role = fields.Str(required=True, validate=validate.OneOf(['client', 'broker']))
+
 
 # Register endpoint
 @auth_service.route('/register', methods=['POST'])
