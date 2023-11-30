@@ -13,7 +13,7 @@ class IPOSchema(Schema):
     tickercode = fields.String(required=True)
     purpose = fields.String(required=True)
     outstanding = fields.Float(required=True)
-    status = fields.String(required=True, validate=validate.OneOf(['approved', 'rejected']))
+    status = fields.String(required=True, validate=validate.OneOf(['pending']))
     priority = fields.Integer(required=True)
     deadline = fields.DateTime(required=True)
 
