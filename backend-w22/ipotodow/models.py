@@ -10,3 +10,7 @@ class IPO(db.Model):
     status = db.Column(db.String(20), nullable=False)
     priority = db.Column(db.Integer, nullable=False)
     deadline = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Foreign key relationship with User
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
+    user = db.relationship('User', backref='ipos')
