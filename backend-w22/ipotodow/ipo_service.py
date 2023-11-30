@@ -17,6 +17,13 @@ class IPOSchema(Schema):
     priority = fields.Integer(required=True)
     deadline = fields.DateTime(required=True)
 
+# Marshmallow schema for request validation - for PUT method
+class IPOUpdateSchema(Schema):
+    tickercode = fields.String(required=False)
+    purpose = fields.String(required=False)
+    outstanding = fields.Float(required=False)
+    priority = fields.Integer(required=False)
+
 
 # Get all IPOs
 @ipo_service.route('/', methods=['GET'])
@@ -66,7 +73,7 @@ def create_ipo_to_do():
 
         # Remove validation fields before creating the IPO object
         validated_data = ipo_schema.load(data)
-        
+
         new_ipo = IPO(**validated_data)
         # **ipo
         db.session.add(new_ipo)
@@ -88,15 +95,30 @@ def create_ipo_to_do():
 def update_ipo_to_do(ipo_id):
     try:
         data = request.json
-        ipo = IPOSchema().load(data)
+        # ipo = IPOSchema().load(data)
+        ipo_update_schema = IPOUpdateSchema()
 
-        updated_ipo = IPO.query.filter_by(id=ipo_id).update(ipo)
-        db.session.commit()
+        # updated_ipo 
+        # Validate and deserialize data for update
+        ipo_update = ipo_update_schema.load(data)
 
-        if updated_ipo == 0:
+        ipo_record = IPO.query.filter_by(id=ipo_id).first()
+        # .update(ipo)
+
+        if ipo_record:
+            for attr, value in ipo_update.items():
+                if value is not None:
+                    setattr(ipo_record, attr, value)
+
+            db.session.commit()
+            return {'message': 'To Do List of IPO Order Preparations updated successfully'}, 200
+        else:
             return {'error': 'To Do List of IPO Order Preparations not found'}, 404
 
-        return {'message': 'To Do List of IPO Order Preparations updated successfully'}, 200
+        # if updated_ipo == 0:
+        #     return {'error': 'To Do List of IPO Order Preparations not found'}, 404
+
+        # return {'message': 'To Do List of IPO Order Preparations updated successfully'}, 200
 
     except ValidationError as e:
         return {'error': e.messages}, 400
