@@ -1,9 +1,10 @@
+import os
 from flask import Flask
 from flask_cors import CORS
 from flask_talisman import Talisman
+from common.bcrypt import bcrypt
+from db import db, db_init
 
-from db import db
-import os
 
 from auth.auth_service import auth_service
 from ipotodow.ipo_service import ipo_service
@@ -38,15 +39,17 @@ talisman = Talisman(
     }
 )
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+database_url = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 db.init_app(app)
+bcrypt.init_app(app)
 
 app.register_blueprint(auth_service, url_prefix='/auth')
 app.register_blueprint(ipo_service, url_prefix='/ipo')
 
 
-# with app.app_context():
-#     db_init()
+with app.app_context():
+    db_init()
 
 # pipenv install flask flask-cors V
 # pipenv install pymongo X
