@@ -12,6 +12,7 @@ pyjwt = "*"
 marshmallow = "*"
 flask-cors = "*"
 flask-talisman = "*"
+python-dotenv = "*"
 
 [dev-packages]
 pytest = "*"
