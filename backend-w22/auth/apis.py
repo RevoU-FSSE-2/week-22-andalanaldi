@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from common.bcrypt import bcrypt
-import bcrypt
+# import bcrypt
 from user.models import users # User,
 from db import db
 import jwt, os
@@ -34,8 +34,8 @@ def register():
         return {"success": False, "message": err.messages}, 400
     # "error": err.messages
 
-    if 'password' not in data:
-        return {"success": False, "message": "Password is required"}, 400
+    # if 'password' not in data:
+    #     return {"success": False, "message": "Password is required"}, 400
 
     if not re.match(r'^(?=.*\d)(?=.*[a-zA-Z]).{8,100}$', data['password']):
         return {"success": False, "message": "Password must be between 8 and 100 characters and contain both letters and numbers"}, 400
@@ -82,7 +82,7 @@ def login():
     payload = {
         '_id': user._id,
         'username': user.username,
-        'role': user.role.value,
+        'role': user.role, # .value,
         'exp': datetime.utcnow() + timedelta(minutes=30) # extend token expiration from 1 to 30 minutes to help debugging
     }
     token = jwt.encode(payload, os.getenv('SECRET_KEY'), algorithm="HS256")
