@@ -3,7 +3,7 @@ from datetime import datetime
 
 class ipotodow18(db.Model): # IPO
     _id = db.Column(db.Integer, primary_key=True)
-    clientid = db.Column(db.Integer, db.ForeignKey('user._id'), nullable=False)
+    clientid = db.Column(db.Integer, db.ForeignKey('users._id'), nullable=False)
     # clientid = db.Column(db.String(50), nullable=False)
     tickercode = db.Column(db.String(50), nullable=False)
     purpose = db.Column(db.String(255), nullable=False)
