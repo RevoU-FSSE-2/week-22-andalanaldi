@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 from marshmallow import Schema, fields, validate, ValidationError
 from ipotodow.models import ipotodow18 # IPO,
-from auth.utils import role_required, broker_required, client_required
+from auth.utils import role_required, decode_jwt # Import the decode_jwt function
 from user.constants import ListRole
 from db import db
 
@@ -63,8 +63,10 @@ def get_all_ipo_to_do():
 # Create IPO
 @ipo_service.route('/new', methods=['POST'])
 # def function untuk cek role
-@client_required(["client"])
+# @client_required(["client"])
+@role_required([ListRole.CLIENT.value])
 def create_ipo_to_do():
+    # flask_request = request  # Assuming request is available in your context
     try:
         data = request.json
         # ipo = IPOSchema().load(data)
@@ -95,53 +97,116 @@ def create_ipo_to_do():
 
 # Update IPO
 @ipo_service.route('/update/<int:ipo_id>', methods=['PUT'])
-@client_required(["client"])
+# @client_required(["client"])
+@role_required([ListRole.CLIENT.value])
 def update_ipo_to_do(ipo_id):
     try:
         data = request.json
-        # ipo = IPOSchema().load(data)
-        ipo_update_schema = IPOUpdateSchema()
 
-        # Fetch the IPO record by its ID
         ipo_record = ipotodow18.query.filter_by(_id=ipo_id).first()
-        # .update(ipo)
-
+        
         if not ipo_record:
             return {'error': 'To Do List of IPO Order Preparations not found'}, 404
         
-        # Ensure the user making the update matches the clientid in the IPO record
-        if ipo_record.clientid != data.get('clientid'):
-            return {'error': 'Unauthorized access to update this IPO record'}, 403
-        
-        # updated_ipo
-        # Validate and deserialize data for update
-        ipo_update = ipo_update_schema.load(data)
+        token = request.headers.get('Authorization')
+        print("Received Token:", token)
+        if not token:
+            return {"error": "Token is not valid"}, 401
 
-        # Update only non-None attributes from the request
-        # if ipo_record:
+        # Additional check if user is allowed to update based on clientid or user ID
+        decoded_token = decode_jwt(token)
+        if not decoded_token or "_id" not in decoded_token:
+            return {"error": "Invalid token or user ID not found in token"}, 401
+
+        user_id = decoded_token.get("_id")
+
+        if ipo_record.clientid != user_id:
+            return {'error': 'Unauthorized access to update this IPO record'}, 403
+
+        # Update the IPO record
+        ipo_update_schema = IPOUpdateSchema()
+        ipo_update = ipo_update_schema.load(data)
+        
         for attr, value in ipo_update.items():
             if value is not None:
                 setattr(ipo_record, attr, value)
-
-            db.session.commit()
-            return {'message': 'To Do List of IPO Order Preparations updated successfully'}, 200
-        # else:
-        #     return {'error': 'To Do List of IPO Order Preparations not found'}, 404
-
-        # if updated_ipo == 0:
-        #     return {'error': 'To Do List of IPO Order Preparations not found'}, 404
-
-        # return {'message': 'To Do List of IPO Order Preparations updated successfully'}, 200
+        
+        db.session.commit()
+        return {'message': 'To Do List of IPO Order Preparations updated successfully'}, 200
 
     except ValidationError as e:
         return {'error': e.messages}, 400
     except Exception as e:
         return {'error': str(e)}, 500
+    # flask_request = request  # Assuming request is available in your context
+    # try:
+    #     data = request.json
+    #     # ipo = IPOSchema().load(data)
+
+    #     # Fetch the IPO record by its ID
+    #     ipo_record = ipotodow18.query.filter_by(_id=ipo_id).first()
+    #     # .update(ipo)
+
+    #     if not ipo_record:
+    #         return {'error': 'To Do List of IPO Order Preparations not found'}, 404
+        
+    #     # Ensure the user making the update matches the clientid in the IPO record
+    #     # if ipo_record.clientid != data.get('clientid'):
+    #     #     return {'error': 'Unauthorized access to update this IPO record'}, 403
+
+    #     token = request.headers.get('Authorization')
+    #     if not token:
+    #         return {"error": "Token is not valid"}, 401
+    #     # Authorization check using role_required decorator
+    #     # This replaces the clientid check
+    #     # Assuming the role is stored in the decoded JWT token
+    #     # Make sure the token includes the necessary role information
+    #     # Decoded token retrieval logic goes here
+    #     decoded_token = decode_jwt(token)
+    #     # decoded_token = decode_jwt(request.headers.get('Authorization'))
+    #     user_role = decoded_token.get("role")
+        
+    #     # Check if the user's role is CLIENT
+    #     if user_role.lower() == ListRole.CLIENT.value.lower():
+    #         if ipo_record.clientid != data.get('clientid'):
+    #             return {'error': 'Unauthorized access to update this IPO record'}, 403
+    #     # if user_role == ListRole.CLIENT.value:
+        
+    #     # updated_ipo
+    #     # Validate and deserialize data for update
+    #         ipo_update_schema = IPOUpdateSchema()
+    #         ipo_update = ipo_update_schema.load(data)
+
+    #         # Update only non-None attributes from the request
+    #         # if ipo_record:
+    #         for attr, value in ipo_update.items():
+    #             if value is not None:
+    #                 setattr(ipo_record, attr, value)
+
+    #             db.session.commit()
+    #             return {'message': 'To Do List of IPO Order Preparations updated successfully'}, 200
+    #         # else:
+    #     #     return {'error': 'To Do List of IPO Order Preparations not found'}, 404
+    #     # If the user's role is not CLIENT, return an error
+    #     return {'error': 'Unauthorized access to update this IPO record'}, 403
+
+    #     # if updated_ipo == 0:
+    #     #     return {'error': 'To Do List of IPO Order Preparations not found'}, 404
+
+    #     # return {'message': 'To Do List of IPO Order Preparations updated successfully'}, 200
+
+    # except ValidationError as e:
+    #     return {'error': e.messages}, 400
+    # except Exception as e:
+    #     return {'error': str(e)}, 500
+
 
 # Delete IPO
 @ipo_service.route('/delete/<int:ipo_id>', methods=['DELETE'])
-@client_required(["client"])
+# @client_required(["client"])
+@role_required([ListRole.CLIENT.value])
 def delete_ipo_to_do(ipo_id):
+    # flask_request = request  # Assuming request is available in your context
     try:
         ipo = ipotodow18.query.filter_by(_id=ipo_id).first()
 
@@ -197,7 +262,8 @@ def delete_ipo_to_do(ipo_id):
 
 # Approval IPO
 @ipo_service.route('/approval/<int:ipo_id>', methods=['PUT'])
-@broker_required(["broker"])
+# @broker_required(["broker"])
+@role_required([ListRole.BROKER.value])
 def approval_ipo(ipo_id): # add (user_id, user_role) from auth utils.py
     try:
         data = request.json
@@ -211,7 +277,7 @@ def approval_ipo(ipo_id): # add (user_id, user_role) from auth utils.py
         ipo_record = ipotodow18.query.filter_by(_id=ipo_id).first()
 
         if ipo_record:
-            ipo_record.status = ipo_status('status') # ipo.get
+            ipo_record.status = ipo_status['status'] # ipo.get
             db.session.commit()
 
             return {'message': 'To Do List of IPO Order Preparations status successfully updated'}, 200
