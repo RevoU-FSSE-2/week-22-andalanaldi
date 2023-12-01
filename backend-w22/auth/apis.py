@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 from common.bcrypt import bcrypt
 import bcrypt
-from user.models import User
+from user.models import users # User,
 from db import db
 import jwt, os
 from datetime import datetime, timedelta
@@ -42,7 +42,7 @@ def register():
 
     hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
 
-    new_user = User(
+    new_user = users(
         username=data['username'], 
         password=hashed_password,
         role=data['role'] # Set the role for the new user
@@ -52,7 +52,7 @@ def register():
     db.session.commit()
 
     return {
-        'user_id': new_user.user_id,
+        '_id': new_user._id,
         'username': new_user.username,
         'role': new_user.role  # Return the role in the response  
         # "success" : True,
@@ -71,7 +71,7 @@ def login():
     if not username or not password:
         return ({"error": "Username or password is missing"}), 400
 
-    user = User.query.filter_by(username=username).first()
+    user = users.query.filter_by(username=username).first() # User
     if not user:
         return {"error": "Username or password is not valid"}, 401
     
@@ -80,7 +80,7 @@ def login():
         return {"error": "Username or password is not valid"}, 401
     
     payload = {
-        'user_id': user.user_id,
+        '_id': user._id,
         'username': user.username,
         'role': user.role.value,
         'exp': datetime.utcnow() + timedelta(minutes=30) # extend token expiration from 1 to 30 minutes to help debugging

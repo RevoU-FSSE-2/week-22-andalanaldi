@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from marshmallow import Schema, fields, validate, ValidationError
-from ipotodow.models import IPO
+from ipotodow.models import ipotodow18 # IPO,
 from auth.utils import role_required, broker_required, client_required
 from user.constants import ListRole
 from db import db
@@ -35,13 +35,13 @@ class IPOBrokerUpdateSchema(Schema):
 # @client_required(["client","broker"])
 def get_all_ipo_to_do():
     role = request.args.get('role')
-    user_id = request.args.get('id')
+    user_id = request.args.get('_id')
 
     try:
         if role == 'client':
-            ipo = IPO.query.filter_by(clientid=user_id).all()
+            ipo = ipotodow18.query.filter_by(clientid=user_id).all()
         else:
-            ipo = IPO.query.all()
+            ipo = ipotodow18.query.all()
 
         ipo_data = [{
             "clientid": item.clientid, 
@@ -78,14 +78,14 @@ def create_ipo_to_do():
         # Remove validation fields before creating the IPO object
         validated_data = ipo_schema.load(data)
 
-        new_ipo = IPO(**validated_data)
+        new_ipo = ipotodow18(**validated_data)
         # **ipo
         db.session.add(new_ipo)
         db.session.commit()
 
         return {
             'message': 'To Do List of IPO Order Preparations successfully created',
-            'data': {'id': new_ipo.id}
+            'data': {'_id': new_ipo._id}
             }, 200
 
     except ValidationError as e:
@@ -102,22 +102,31 @@ def update_ipo_to_do(ipo_id):
         # ipo = IPOSchema().load(data)
         ipo_update_schema = IPOUpdateSchema()
 
-        # updated_ipo 
+        # Fetch the IPO record by its ID
+        ipo_record = ipotodow18.query.filter_by(_id=ipo_id).first()
+        # .update(ipo)
+
+        if not ipo_record:
+            return {'error': 'To Do List of IPO Order Preparations not found'}, 404
+        
+        # Ensure the user making the update matches the clientid in the IPO record
+        if ipo_record.clientid != data.get('clientid'):
+            return {'error': 'Unauthorized access to update this IPO record'}, 403
+        
+        # updated_ipo
         # Validate and deserialize data for update
         ipo_update = ipo_update_schema.load(data)
 
-        ipo_record = IPO.query.filter_by(id=ipo_id).first()
-        # .update(ipo)
-
-        if ipo_record:
-            for attr, value in ipo_update.items():
-                if value is not None:
-                    setattr(ipo_record, attr, value)
+        # Update only non-None attributes from the request
+        # if ipo_record:
+        for attr, value in ipo_update.items():
+            if value is not None:
+                setattr(ipo_record, attr, value)
 
             db.session.commit()
             return {'message': 'To Do List of IPO Order Preparations updated successfully'}, 200
-        else:
-            return {'error': 'To Do List of IPO Order Preparations not found'}, 404
+        # else:
+        #     return {'error': 'To Do List of IPO Order Preparations not found'}, 404
 
         # if updated_ipo == 0:
         #     return {'error': 'To Do List of IPO Order Preparations not found'}, 404
@@ -134,7 +143,7 @@ def update_ipo_to_do(ipo_id):
 @client_required(["client"])
 def delete_ipo_to_do(ipo_id):
     try:
-        ipo = IPO.query.filter_by(id=ipo_id).first()
+        ipo = ipotodow18.query.filter_by(_id=ipo_id).first()
 
         if ipo:
             # Check user's role and ID before deletion
@@ -149,7 +158,7 @@ def delete_ipo_to_do(ipo_id):
             return {'error': 'To Do List of IPO Order Preparations not found'}, 404
 
     # try:
-    #     deleted_ipo = IPO.query.filter_by(id=ipo_id).delete()
+    #     deleted_ipo = IPO.query.filter_by(_id=ipo_id).delete()
     #     db.session.commit()
 
     #     if deleted_ipo == 0:
@@ -192,12 +201,17 @@ def delete_ipo_to_do(ipo_id):
 def approval_ipo(ipo_id): # add (user_id, user_role) from auth utils.py
     try:
         data = request.json
-        ipo = IPOBrokerUpdateSchema().load(data)
+        # ipo = IPOBrokerUpdateSchema().load(data)
         # (only=['status'])
-        ipo_record = IPO.query.filter_by(id=ipo_id).first()
+        ipo_status_schema = IPOBrokerUpdateSchema()
+
+        # Validate the status field in the request
+        ipo_status = ipo_status_schema.load(data)
+
+        ipo_record = ipotodow18.query.filter_by(_id=ipo_id).first()
 
         if ipo_record:
-            ipo_record.status = ipo.get('status')
+            ipo_record.status = ipo_status('status') # ipo.get
             db.session.commit()
 
             return {'message': 'To Do List of IPO Order Preparations status successfully updated'}, 200
